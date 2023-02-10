@@ -1,0 +1,35 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudText>Voulez-vous vraiment supprimer cette imprimante ?</MudText>
+        <MudText>Nom : @NomImprimante</MudText>
+        <MudText>Marque : @MarqueImprimante</MudText>
+        <MudText>Modele : @ModeleImprimante</MudText>
+        <MudText>Serie : @SerieImprimante</MudText>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Annuler</MudButton>
+        <MudButton Color="@Color" Variant="Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public string NomImprimante { get; set; }
+
+    [Parameter] public string MarqueImprimante { get; set; }
+
+    [Parameter] public string ModeleImprimante { get; set; }
+
+    [Parameter] public string SerieImprimante { get; set; }
+
+
+
+    [Parameter] public string ButtonText { get; set; }
+
+    [Parameter] public Color Color { get; set; }
+
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+}

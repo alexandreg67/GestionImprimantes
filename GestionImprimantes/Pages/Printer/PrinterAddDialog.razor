@@ -1,0 +1,67 @@
+﻿@using GestionImprimantes.Services.Interfaces;
+
+@inject ILocationService locationService
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Update" Class="mr-3 mb-n1"/>
+            Ajouter
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField Label="Nom" @bind-Value="printer.Nom" For="@(() => printer.Nom)" />
+        <MudTextField Label="Marque" Class="mt-3" @bind-Value="printer.Marque" For="@(() => printer.Marque)" />
+        <MudTextField Label="Modele" Class="mt-3" @bind-Value="printer.Modele" For="@(() => printer.Modele)" />
+        <MudTextField Label="Serie" Class="mt-3" @bind-Value="printer.Serie" For="@(() => printer.Serie)" />
+        <MudNumericField Label="Encre" Class="mt-3" @bind-Value="printer.Encre" For="@(() => printer.Encre)" />
+
+        <MudSelect @bind-Value="@printer.LocationId" Label="Localisation" Variant="Variant.Outlined">
+            @foreach (var location in locations.OrderBy(x => x.Ville))
+            {
+                <MudSelectItem Value="@location.Id">@location.Ville, @location.Nom</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="Update">Ajouter</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+
+
+@code {
+
+    [Parameter]
+    public int LocationId { get; set; }
+
+    private List<Models.Location> locations = new();
+
+
+    protected override void OnInitialized()
+    {
+        {
+            locations = locationService.GetAll();
+            base.OnInitialized();
+        };
+    }
+
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Models.Printer printer { get; set; } = new();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Update()
+    {  
+        MudDialog.Close(DialogResult.Ok(printer.Id));
+    }
+}

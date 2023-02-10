@@ -1,0 +1,56 @@
+﻿<MudDialog>
+    <DialogContent>
+
+        <MudText>Nom : @LocationNom</MudText>
+        <MudText>Adresse : @AdresseLocation</MudText>
+        <MudText>Code Postal : @CodePostalLocation</MudText>
+        <MudText>Ville : @VilleLocation</MudText>
+        <MudText> <br /> </MudText>
+        @if (Printers != null)
+        {
+            <MudText Style="font-weight:bold">Attention, vous allez également supprimer les imprimantes associées à cette localisation : </MudText>
+            @foreach(var printer in Printers)
+            {
+                <MudText>Nom : @printer.Nom, Marque : @printer.Marque, Modele : @printer.Modele, Série : @printer.Serie</MudText>
+            }
+            <MudText> <br /> </MudText>
+            <MudCheckBox @bind-Checked="@CheckBox" Dense="true" Color="Color.Error">Je souhaite supprimer les imprimantes associées</MudCheckBox>
+            <MudText> <br /></MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Annuler</MudButton>
+        @if (Printers == null || Printers != null && CheckBox == true)
+        {
+            <MudButton Color="@Color" Variant="Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+
+    public bool CheckBox { get; set; } = false;
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public string LocationNom { get; set; }
+
+    [Parameter] public string AdresseLocation { get; set; }
+
+    [Parameter] public string VilleLocation { get; set; }
+
+    [Parameter] public string CodePostalLocation { get; set; }
+
+    [Parameter] public List<Models.Printer> Printers { get; set; }
+
+    [Parameter] public string ButtonText { get; set; }
+
+    [Parameter] public Color Color { get; set; }
+
+
+
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+}

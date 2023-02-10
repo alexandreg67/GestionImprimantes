@@ -1,0 +1,171 @@
+﻿@page "/printers"
+
+@using GestionImprimantes.Pages;
+@using GestionImprimantes.Services;
+@using Services.Interfaces
+@using Models
+
+@inject IPrinterService printerService
+@inject ILocationService locationService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+
+<h3>Imprimantes</h3>
+
+<br />
+<MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="Add" Variant="Variant.Filled" >Ajouter une imprimante</MudButton>
+<br />
+<br />
+
+<MudTabs  Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+
+    @foreach (var location in locations.OrderBy(x => x.Ville).GroupBy(x => x.Ville))
+    {
+        <MudTabPanel Text="@location.Key">
+
+            <MudTable Dense="true" Striped="true" Bordered="true" Items="printers.OrderBy(x => x.Encre)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="false" LoadingProgressColor="Color.Info">
+                <HeaderContent>
+
+                    <MudTh>Localisation</MudTh>
+                    <MudTh>Nom</MudTh>
+                    <MudTh>Marque</MudTh>
+                    <MudTh>Modele</MudTh>
+                    <MudTh>Serie</MudTh>
+                    <MudTh>Encre</MudTh>
+                    <MudTh Style="text-align:center">Date de création</MudTh>
+                    <MudTh Style="text-align:center">Date de modification</MudTh>
+                    <MudTh Style="text-align:center"></MudTh>
+
+                </HeaderContent>
+                                                
+                <RowTemplate>
+                    @foreach (var loc in location.OrderBy(x => x.Ville))
+                    {
+                        @if (context.LocationId == loc.Id)
+                        {
+                            <MudTd DataLabel="Localisation">@loc.Nom</MudTd>
+                            <MudTd DataLabel="Nom">@context.Nom</MudTd>
+                            <MudTd DataLabel="Marque">@context.Marque</MudTd>
+                            <MudTd DataLabel="Modele">@context.Modele</MudTd>
+                            <MudTd DataLabel="Série">@context.Serie</MudTd>
+                            
+                            @if (context.Encre < 50)
+                            {
+                                <MudTd DataLabel="Encre">
+                                    <MudProgressLinear title="@String.Concat(context.Encre, "%")" Color=" Color.Error " Rounded="true" Size="Size.Medium" Value="@Convert.ToDouble(context.Encre)" Class="my-7" />
+                                </MudTd>
+                            }
+                            else
+                            {
+                                <MudTd DataLabel="Encre">
+                                    <MudProgressLinear title="@String.Concat(context.Encre, "%")" Color="Color.Primary" Rounded="true" Size="Size.Medium" Value="@Convert.ToDouble(context.Encre)" Class="my-7" />
+                                </MudTd>
+                            }
+
+                            <MudTd DataLabel="DateDeCréation" Style="text-align:center">@context.DateDeCreation.ToString("dd/MM/yy")</MudTd>
+                                @if (context.DateDeModification == default)
+                                {
+                                    <MudTd DataLabel="DateDeModification" Style="text-align:center"></MudTd>
+                                }else
+                                {
+                                    <MudTd DataLabel="DateDeModification" Style="text-align:center">@context.DateDeModification.ToString("dd/MM/yy")</MudTd>
+                                }
+                            <MudTd DataLabel="Action" Style="text-align:center">
+                                <MudTooltip Text="Modifier">
+                                    <MudIconButton OnClick="@((e) => Update(context))" Icon="@Icons.Material.Filled.Update" Color="Color.Primary" />
+                                </MudTooltip>
+                                <MudTooltip Text="Supprimer">
+                                    <MudIconButton @onclick="async ()=> await Delete(context) " Icon="@Icons.Material.Filled.Delete" Color="Color.Secondary" />
+                                </MudTooltip>
+                            </MudTd>
+                                                           
+                        }
+                    }
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+    }
+</MudTabs>
+
+
+
+@code {
+    private List<Models.Printer> printers = new();
+
+    private List<Location> locations = new();
+
+
+    protected override void OnInitialized()
+    {
+        {
+            printers = printerService.GetAll();
+            locations = locationService.GetAll();
+
+            base.OnInitialized();
+        };
+    }
+
+
+    private async Task Delete(Printer printer)
+    {
+        var parameters = new DialogParameters();
+
+        parameters.Add("NomImprimante", printer.Nom);
+        parameters.Add("MarqueImprimante", printer.Marque);
+        parameters.Add("ModeleImprimante", printer.Modele);
+        parameters.Add("SerieImprimante", printer.Serie);
+
+        parameters.Add("ButtonText", "Supprimer");
+        parameters.Add("Color", Color.Error);
+
+
+        var dialog = await DialogService.ShowAsync<PrinterDeleteDialog>("Supprimer", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            printers.Remove(printer);
+            printerService.Delete(printer);
+            StateHasChanged();
+            Snackbar.Add("L'imprimante à bien été supprimée", Severity.Success);
+        }
+    }
+
+
+    async Task Update(Printer printer)
+    {
+        var parameters = new DialogParameters { ["printer"] = printer };
+
+        var dialog = await DialogService.ShowAsync<PrinterUpdateDialog>("Mise à jour", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            printerService.AddUpdate(printer);
+            StateHasChanged();
+            Snackbar.Add("L'imprimante à été mise à jour", Severity.Success);
+        }
+    }
+
+    async Task Add()
+    {
+        Models.Printer printer = new();
+
+        var parameters = new DialogParameters { ["printer"] = printer };
+
+
+        var dialog = await DialogService.ShowAsync<PrinterAddDialog>("Ajouter une imprimante", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            printerService.AddUpdate(printer);
+            printers.Add(printer);
+            StateHasChanged();
+            Snackbar.Add("L'imprimante à été ajoutée", Severity.Success);
+        }
+    }
+
+
+}

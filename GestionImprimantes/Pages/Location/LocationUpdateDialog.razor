@@ -1,0 +1,60 @@
+﻿@using GestionImprimantes.Services.Interfaces;
+
+@inject ILocationService locationService
+
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Update" Class="mr-3 mb-n1"/>
+            Modifier
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField Label="Nom" @bind-Value="location.Nom" For="@(() => location.Nom)" />
+        <MudTextField Label="Adresse" Class="mt-3" @bind-Value="location.Adresse" For="@(() => location.Adresse)" />
+        <MudTextField Label="Code Postal" Class="mt-3" @bind-Value="location.CodePostal" For="@(() => location.CodePostal)" />
+        <MudTextField Label="Ville" Class="mt-3" @bind-Value="location.Ville" For="@(() => location.Ville)" />
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="Update">Modifier</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+
+
+@code {
+
+    [Parameter]
+    public int LocationId { get; set; }
+
+    private List<Models.Location> locations = new();
+
+
+    protected override void OnInitialized()
+    {
+        {
+            locations = locationService.GetAll();
+            base.OnInitialized();
+        };
+    }
+
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Models.Location location { get; set; } = new();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Update()
+    {  
+        MudDialog.Close(DialogResult.Ok(location.Id));
+    }
+}

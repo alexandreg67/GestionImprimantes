@@ -1,0 +1,155 @@
+﻿@page "/locations"
+
+@using GestionImprimantes.Services;
+@using Services.Interfaces
+@using Models
+@using GestionImprimantes.Pages;
+
+@inject ILocationService locationService
+@inject IPrinterService printerServic
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<h3>Localisations</h3>
+
+<br />
+<MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="Add" Variant="Variant.Filled">Ajouter une Localisation</MudButton>
+<br />
+<br />
+    
+
+
+
+<MudSimpleTable Dense="true" Hover="true" FixedHeader="true" Bordered="true" Striped="true" Style="overflow-x: auto;">
+    <thead>
+        <tr>          
+            <th>Nom</th>
+            <th>Adresse</th>
+            <th>Ville</th>
+            <th>Code Postal</th>
+            <th style="text-align:center">Date de création</th>
+            <th style="text-align:center" >Date de modification</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var location in locations.OrderBy(x => x.Ville))
+        {
+            <tr>
+                <td>@location.Nom</td>
+                <td>@location.Adresse</td>
+                <td>@location.Ville</td>
+                <td>@location.CodePostal</td>
+                <td style="text-align:center">@location.DateDeCreation.ToString("dd/MM/yyyy")</td>
+                @if (location.DateDeModification == default)
+                {
+                    <td style="text-align:center"></td>
+                }else
+                {
+                    <td style="text-align:center">@location.DateDeModification.ToString("dd/MM/yyyy")</td>
+                }
+
+                <td style="text-align:center">
+                    <MudTooltip Text="Modifier">
+                        <MudIconButton OnClick="@((e) => Update(location))" Icon="@Icons.Material.Filled.Update" Color="Color.Primary" />
+                    </MudTooltip>
+                    <MudTooltip Text="Supprimer">
+                        <MudIconButton @onclick="async ()=> await Delete(location) " Icon="@Icons.Material.Filled.Delete" Color="Color.Secondary" />
+                    </MudTooltip>
+                </td>
+            </tr> 
+        }          
+
+
+    </tbody>
+</MudSimpleTable>
+
+
+
+
+@code {
+    private List<Location> locations = new();
+    private List<Printer> printers = new();
+
+    protected override void OnInitialized()
+    {
+        {
+            locations = locationService.GetAll();
+            printers = printerServic.GetAll();
+            base.OnInitialized();
+        };
+    }
+
+
+    private async Task Delete(Location location)
+    {
+        var parameters = new DialogParameters();
+
+        parameters.Add("LocationNom", location.Nom);
+        parameters.Add("AdresseLocation", location.Adresse);
+        parameters.Add("CodepostalLocation", location.CodePostal);
+        parameters.Add("VilleLocation", location.Ville);
+
+        parameters.Add("ButtonText", "Supprimer");
+        parameters.Add("Color", Color.Error);
+
+        if (printers.Any(x => x.LocationId == location.Id))
+        {
+            parameters.Add("Printers", printers.Where(x => x.LocationId == location.Id).ToList());
+        }
+
+        var dialog = await DialogService.ShowAsync<LocationDeleteDialog>("Supprimer", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+
+            if (locationService.Delete(location) == "")
+            {
+                locations.Remove(location);
+                Snackbar.Add("La localisation à bien été supprimée", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Il y a eu un problème lors de la suppression", Severity.Error);
+            }
+
+        }
+    }
+
+
+    async Task Add()
+    {
+        Models.Location location = new();
+
+        var parameters = new DialogParameters { ["location"] = location };
+
+
+        var dialog = await DialogService.ShowAsync<LocationAddDialog>("Ajouter une imprimante", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            locations.Add(location);
+            locationService.AddUpdate(location);
+            StateHasChanged();
+            Snackbar.Add("La nouvelle localisation à été ajoutée", Severity.Success);
+        }
+    }
+
+    async Task Update(Location location)
+    {
+        var parameters = new DialogParameters { ["location"] = location };
+
+        var dialog = await DialogService.ShowAsync<LocationUpdateDialog>("Mise à jour", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            locationService.AddUpdate(location);
+            StateHasChanged();
+            Snackbar.Add("La localisation à été mise à jour", Severity.Success);
+        }
+    }
+}
